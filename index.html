@@ -562,7 +562,7 @@
         <div class="settings-section-title">API</div>
         <div style="padding: 12px 18px;">
           <label class="form-label">CORS Proxy URL</label>
-          <input type="text" class="form-input" id="proxyUrlInput" placeholder="https://corsproxy.io/?url=">
+          <input type="text" class="form-input" id="proxyUrlInput" placeholder="https://api.allorigins.win/raw?url=">
           <div class="form-hint">시세 조회 시 사용할 CORS 프록시 주소</div>
         </div>
         <button class="settings-item" id="btnSaveProxy">
@@ -803,7 +803,7 @@
       },
 
       getProxyUrl() {
-        return localStorage.getItem(this.PROXY_KEY) || 'https://corsproxy.io/?url=';
+        return localStorage.getItem(this.PROXY_KEY) || 'https://api.allorigins.win/raw?url=';
       },
 
       setProxyUrl(url) {
