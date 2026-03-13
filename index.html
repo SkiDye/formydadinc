@@ -829,11 +829,12 @@
         }
 
         const proxyUrl = DataStore.getProxyUrl();
+
+        // 1차: Naver Finance 차트 API
         try {
           const naverUrl = `https://fchart.stock.naver.com/sise.nhn?symbol=${stockCode}&timeframe=day&count=1&requestType=0`;
           const resp = await fetch(proxyUrl + encodeURIComponent(naverUrl));
           const text = await resp.text();
-
           const match = text.match(/<item data="([^"]+)"/);
           if (match) {
             const parts = match[1].split('|');
@@ -841,6 +842,21 @@
             if (!isNaN(closePrice) && closePrice > 0) {
               DataStore.setPriceCache(stockCode, closePrice);
               return { price: closePrice, stale: false, timestamp: Date.now() };
+            }
+          }
+        } catch (e) { /* try fallback */ }
+
+        // 2차: Naver Finance 메인 페이지 스크래핑
+        try {
+          const pageUrl = `https://finance.naver.com/item/main.naver?code=${stockCode}`;
+          const resp = await fetch(proxyUrl + encodeURIComponent(pageUrl));
+          const html = await resp.text();
+          const match = html.match(/today">[\s\S]*?<span class="blind">([0-9,]+)<\/span>/);
+          if (match) {
+            const price = parseInt(match[1].replace(/,/g, ''));
+            if (!isNaN(price) && price > 0) {
+              DataStore.setPriceCache(stockCode, price);
+              return { price, stale: false, timestamp: Date.now() };
             }
           }
         } catch (e) { /* fallback */ }
