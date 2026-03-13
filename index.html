@@ -722,9 +722,15 @@
 
       async init() {
         let data = this.load();
-        if (!data) {
-          data = await this.initFromFile();
-          this.save(data);
+        if (!data || data.transactions.length === 0) {
+          const fileData = await this.initFromFile();
+          if (fileData.transactions.length > 0) {
+            data = fileData;
+            this.save(data);
+          } else if (!data) {
+            data = fileData;
+            this.save(data);
+          }
         }
         return data;
       },
