@@ -5,55 +5,12 @@
     "baseCurrency": "KRW"
   },
   "stocks": {
-    "005930": { "name": "삼성전자", "market": "KOSPI" },
-    "000660": { "name": "SK하이닉스", "market": "KOSPI" },
-    "373220": { "name": "LG에너지솔루션", "market": "KOSPI" },
     "009290": { "name": "광동제약", "market": "KOSPI" },
     "005610": { "name": "SPC삼립", "market": "KOSPI" }
   },
   "transactions": [
     {
-      "id": "tx_1704067200000",
-      "code": "005930",
-      "type": "buy",
-      "date": "2026-01-15",
-      "quantity": 10,
-      "price": 78000,
-      "fee": 1170,
-      "memo": "분할 매수 1차"
-    },
-    {
-      "id": "tx_1704153600000",
-      "code": "000660",
-      "type": "buy",
-      "date": "2026-02-03",
-      "quantity": 5,
-      "price": 178000,
-      "fee": 1335,
-      "memo": ""
-    },
-    {
-      "id": "tx_1704240000000",
-      "code": "373220",
-      "type": "buy",
-      "date": "2026-02-10",
-      "quantity": 2,
-      "price": 420000,
-      "fee": 1260,
-      "memo": "2차전지 투자"
-    },
-    {
-      "id": "tx_1704326400000",
-      "code": "005930",
-      "type": "sell",
-      "date": "2026-03-10",
-      "quantity": 5,
-      "price": 82000,
-      "fee": 1025,
-      "memo": "부분 익절"
-    },
-    {
-      "id": "tx_1704412800000",
+      "id": "tx_1710400000000",
       "code": "009290",
       "type": "buy",
       "date": "2026-03-14",
@@ -63,7 +20,7 @@
       "memo": ""
     },
     {
-      "id": "tx_1704412800001",
+      "id": "tx_1710400000001",
       "code": "005610",
       "type": "buy",
       "date": "2026-03-14",
