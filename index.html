@@ -7,6 +7,8 @@
   <meta name="apple-mobile-web-app-status-bar-style" content="default">
   <meta name="theme-color" content="#ffffff">
   <title>My Portfolio</title>
+  <link rel="manifest" href="manifest.json">
+  <link rel="apple-touch-icon" href="icon-192.png">
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Noto+Sans+KR:wght@400;500;600;700&display=swap" rel="stylesheet">
   <style>
@@ -570,6 +572,13 @@
         </div>
         <button class="settings-item" id="btnSaveProxy">
           <span class="settings-item-text">프록시 설정 저장</span>
+          <span class="settings-item-arrow">&#x276F;</span>
+        </button>
+      </div>
+      <div class="settings-section">
+        <div class="settings-section-title">App</div>
+        <button class="settings-item" id="btnInstallPWA">
+          <span class="settings-item-text">홈 화면에 추가 (위젯)</span>
           <span class="settings-item-arrow">&#x276F;</span>
         </button>
       </div>
@@ -1469,6 +1478,25 @@
         document.getElementById('btnSaveProxy').addEventListener('click', () => {
           DataStore.setProxyUrl(document.getElementById('proxyUrlInput').value.trim());
           UI.showToast('프록시 설정이 저장되었습니다.');
+        });
+
+        // PWA Install
+        let deferredPrompt = null;
+        window.addEventListener('beforeinstallprompt', (e) => {
+          e.preventDefault();
+          deferredPrompt = e;
+        });
+
+        document.getElementById('btnInstallPWA').addEventListener('click', () => {
+          if (deferredPrompt) {
+            deferredPrompt.prompt();
+            deferredPrompt.userChoice.then(() => { deferredPrompt = null; });
+          } else if (navigator.standalone || window.matchMedia('(display-mode: standalone)').matches) {
+            UI.showToast('이미 앱으로 설치되어 있습니다.');
+          } else {
+            // iOS Safari or unsupported browser
+            UI.showToast('공유 버튼 → "홈 화면에 추가"를 눌러주세요.');
+          }
         });
       }
     };
