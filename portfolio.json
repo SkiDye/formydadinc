@@ -7,7 +7,9 @@
   "stocks": {
     "005930": { "name": "삼성전자", "market": "KOSPI" },
     "000660": { "name": "SK하이닉스", "market": "KOSPI" },
-    "373220": { "name": "LG에너지솔루션", "market": "KOSPI" }
+    "373220": { "name": "LG에너지솔루션", "market": "KOSPI" },
+    "009290": { "name": "광동제약", "market": "KOSPI" },
+    "005610": { "name": "SPC삼립", "market": "KOSPI" }
   },
   "transactions": [
     {
@@ -49,6 +51,26 @@
       "price": 82000,
       "fee": 1025,
       "memo": "부분 익절"
+    },
+    {
+      "id": "tx_1704412800000",
+      "code": "009290",
+      "type": "buy",
+      "date": "2026-03-14",
+      "quantity": 600,
+      "price": 10400,
+      "fee": 936,
+      "memo": ""
+    },
+    {
+      "id": "tx_1704412800001",
+      "code": "005610",
+      "type": "buy",
+      "date": "2026-03-14",
+      "quantity": 200,
+      "price": 49850,
+      "fee": 1496,
+      "memo": ""
     }
   ]
 }
