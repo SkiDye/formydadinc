@@ -1029,8 +1029,9 @@
               </div>
               <div class="holding-bottom">
                 <div class="holding-info">
-                  ${h.qty}주 | 평균 ${this.formatKRWNoSign(h.avgPrice)}<br>
-                  평가 ${this.formatKRWNoSign(evalAmount)}
+                  ${h.qty}주 | 평단 ${this.formatKRWNoSign(h.avgPrice)}<br>
+                  평가 ${this.formatKRWNoSign(evalAmount)}<br>
+                  투자 ${this.formatKRWNoSign(h.totalCost)}
                 </div>
                 <div class="holding-pnl">
                   <div class="holding-pnl-amount ${this.pnlClass(pnl)}">${this.formatKRW(pnl)}</div>
