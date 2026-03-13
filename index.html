@@ -904,7 +904,7 @@
           const h = holdings[tx.code];
 
           if (tx.type === 'buy') {
-            h.totalCost += (tx.quantity * tx.price) + (tx.fee || 0);
+            h.totalCost += tx.quantity * tx.price;
             h.qty += tx.quantity;
           } else if (tx.type === 'sell') {
             if (h.qty > 0) {
