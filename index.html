@@ -1,0 +1,1495 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+  <meta name="theme-color" content="#1a1a2e">
+  <title>My Portfolio</title>
+  <style>
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+    :root {
+      --bg-primary: #1a1a2e;
+      --bg-card: #16213e;
+      --bg-input: #0f3460;
+      --bg-modal: #1a1a2e;
+      --text-primary: #f1f1f1;
+      --text-secondary: #8899aa;
+      --color-gain: #ff4757;
+      --color-loss: #3742fa;
+      --color-neutral: #a0a0a0;
+      --color-accent: #e94560;
+      --color-buy: #ff4757;
+      --color-sell: #3742fa;
+      --radius: 12px;
+      --nav-height: 60px;
+      --header-height: 56px;
+    }
+    html, body {
+      height: 100%;
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+      background: var(--bg-primary);
+      color: var(--text-primary);
+      overflow: hidden;
+      -webkit-tap-highlight-color: transparent;
+    }
+
+    /* Header */
+    .header {
+      position: fixed; top: 0; left: 0; right: 0;
+      height: var(--header-height);
+      background: var(--bg-card);
+      display: flex; align-items: center; justify-content: space-between;
+      padding: 0 16px;
+      z-index: 100;
+      border-bottom: 1px solid rgba(255,255,255,0.05);
+    }
+    .header-title {
+      font-size: 18px; font-weight: 700;
+      background: linear-gradient(135deg, var(--color-accent), #ff6b81);
+      -webkit-background-clip: text; -webkit-text-fill-color: transparent;
+      background-clip: text;
+    }
+    .header-actions { display: flex; gap: 8px; }
+    .header-btn {
+      background: none; border: none; color: var(--text-secondary);
+      font-size: 20px; cursor: pointer; padding: 8px;
+      border-radius: 8px; transition: background 0.2s;
+    }
+    .header-btn:active { background: rgba(255,255,255,0.1); }
+    .header-sub {
+      font-size: 11px; color: var(--text-secondary);
+    }
+
+    /* Tab Content Area */
+    .tab-content-area {
+      position: fixed;
+      top: var(--header-height);
+      bottom: var(--nav-height);
+      left: 0; right: 0;
+      overflow-y: auto;
+      -webkit-overflow-scrolling: touch;
+    }
+    .tab-pane {
+      display: none;
+      padding: 16px;
+      padding-bottom: 24px;
+      min-height: 100%;
+    }
+    .tab-pane.active { display: block; }
+
+    /* Bottom Navigation */
+    .bottom-nav {
+      position: fixed; bottom: 0; left: 0; right: 0;
+      height: var(--nav-height);
+      background: var(--bg-card);
+      display: flex; align-items: center; justify-content: space-around;
+      border-top: 1px solid rgba(255,255,255,0.05);
+      z-index: 100;
+    }
+    .nav-item {
+      display: flex; flex-direction: column; align-items: center;
+      gap: 2px; cursor: pointer; padding: 8px 16px;
+      color: var(--text-secondary); transition: color 0.2s;
+      background: none; border: none; font-family: inherit;
+    }
+    .nav-item.active { color: var(--color-accent); }
+    .nav-item .nav-icon { font-size: 22px; }
+    .nav-item .nav-label { font-size: 11px; font-weight: 500; }
+
+    /* Summary Card */
+    .summary-card {
+      background: linear-gradient(135deg, var(--bg-card), #1a2744);
+      border-radius: var(--radius);
+      padding: 24px 20px;
+      margin-bottom: 16px;
+      border: 1px solid rgba(255,255,255,0.05);
+    }
+    .summary-label {
+      font-size: 13px; color: var(--text-secondary); margin-bottom: 4px;
+    }
+    .summary-total {
+      font-size: 32px; font-weight: 700; margin-bottom: 16px;
+      letter-spacing: -0.5px;
+    }
+    .summary-row {
+      display: flex; justify-content: space-between; gap: 12px;
+    }
+    .summary-item {
+      flex: 1; text-align: center;
+      background: rgba(0,0,0,0.2); border-radius: 8px; padding: 12px 8px;
+    }
+    .summary-item-label {
+      font-size: 11px; color: var(--text-secondary); margin-bottom: 4px;
+    }
+    .summary-item-value {
+      font-size: 15px; font-weight: 600;
+    }
+
+    /* Holdings List */
+    .section-title {
+      font-size: 15px; font-weight: 600; margin-bottom: 12px;
+      color: var(--text-secondary);
+    }
+    .holding-card {
+      background: var(--bg-card);
+      border-radius: var(--radius);
+      padding: 16px;
+      margin-bottom: 10px;
+      border: 1px solid rgba(255,255,255,0.05);
+      cursor: pointer;
+      transition: transform 0.15s;
+    }
+    .holding-card:active { transform: scale(0.98); }
+    .holding-top {
+      display: flex; justify-content: space-between; align-items: flex-start;
+      margin-bottom: 10px;
+    }
+    .holding-name {
+      font-size: 16px; font-weight: 600;
+    }
+    .holding-code {
+      font-size: 12px; color: var(--text-secondary); margin-top: 2px;
+    }
+    .holding-current-price {
+      font-size: 16px; font-weight: 600; text-align: right;
+    }
+    .holding-price-label {
+      font-size: 11px; color: var(--text-secondary); text-align: right; margin-top: 2px;
+    }
+    .holding-bottom {
+      display: flex; justify-content: space-between; align-items: flex-end;
+    }
+    .holding-info {
+      font-size: 13px; color: var(--text-secondary);
+    }
+    .holding-pnl {
+      text-align: right;
+    }
+    .holding-pnl-amount {
+      font-size: 15px; font-weight: 600;
+    }
+    .holding-pnl-percent {
+      font-size: 13px; font-weight: 500; margin-top: 2px;
+    }
+
+    /* Color helpers */
+    .gain { color: var(--color-gain); }
+    .loss { color: var(--color-loss); }
+    .neutral { color: var(--color-neutral); }
+
+    /* Transaction List */
+    .tx-card {
+      background: var(--bg-card);
+      border-radius: var(--radius);
+      padding: 14px 16px;
+      margin-bottom: 8px;
+      border: 1px solid rgba(255,255,255,0.05);
+      display: flex; align-items: center; gap: 12px;
+      position: relative;
+    }
+    .tx-type-badge {
+      width: 40px; height: 40px;
+      border-radius: 10px;
+      display: flex; align-items: center; justify-content: center;
+      font-size: 13px; font-weight: 700;
+      flex-shrink: 0;
+    }
+    .tx-type-badge.buy {
+      background: rgba(255,71,87,0.15); color: var(--color-buy);
+    }
+    .tx-type-badge.sell {
+      background: rgba(55,66,250,0.15); color: var(--color-sell);
+    }
+    .tx-info { flex: 1; min-width: 0; }
+    .tx-stock-name {
+      font-size: 14px; font-weight: 600;
+      white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+    }
+    .tx-detail {
+      font-size: 12px; color: var(--text-secondary); margin-top: 2px;
+    }
+    .tx-right { text-align: right; flex-shrink: 0; }
+    .tx-amount {
+      font-size: 14px; font-weight: 600;
+    }
+    .tx-date {
+      font-size: 11px; color: var(--text-secondary); margin-top: 2px;
+    }
+    .tx-actions {
+      display: flex; gap: 4px; margin-top: 8px;
+    }
+    .tx-action-btn {
+      background: rgba(255,255,255,0.05); border: none;
+      color: var(--text-secondary); font-size: 12px;
+      padding: 4px 10px; border-radius: 6px; cursor: pointer;
+    }
+    .tx-action-btn.delete { color: var(--color-accent); }
+    .tx-action-btn:active { background: rgba(255,255,255,0.1); }
+
+    /* FAB Button */
+    .fab {
+      position: fixed;
+      bottom: calc(var(--nav-height) + 20px);
+      right: 20px;
+      width: 56px; height: 56px;
+      border-radius: 16px;
+      background: linear-gradient(135deg, var(--color-accent), #ff6b81);
+      border: none; color: white;
+      font-size: 28px; cursor: pointer;
+      display: flex; align-items: center; justify-content: center;
+      box-shadow: 0 4px 20px rgba(233,69,96,0.4);
+      z-index: 50;
+      transition: transform 0.2s;
+    }
+    .fab:active { transform: scale(0.9); }
+    .fab.hidden { display: none; }
+
+    /* Modal */
+    .modal-overlay {
+      position: fixed; inset: 0;
+      background: rgba(0,0,0,0.7);
+      z-index: 200;
+      display: none;
+      align-items: flex-end;
+      justify-content: center;
+    }
+    .modal-overlay.active { display: flex; }
+    .modal {
+      background: var(--bg-modal);
+      width: 100%;
+      max-width: 480px;
+      max-height: 90vh;
+      border-radius: 20px 20px 0 0;
+      padding: 20px;
+      overflow-y: auto;
+      animation: slideUp 0.3s ease;
+    }
+    @keyframes slideUp {
+      from { transform: translateY(100%); }
+      to { transform: translateY(0); }
+    }
+    .modal-header {
+      display: flex; justify-content: space-between; align-items: center;
+      margin-bottom: 20px;
+    }
+    .modal-title { font-size: 18px; font-weight: 700; }
+    .modal-close {
+      background: none; border: none; color: var(--text-secondary);
+      font-size: 24px; cursor: pointer; padding: 4px;
+    }
+
+    /* Toggle */
+    .toggle-group {
+      display: flex; gap: 0; margin-bottom: 20px;
+      background: var(--bg-input); border-radius: 10px; padding: 4px;
+    }
+    .toggle-btn {
+      flex: 1; padding: 10px;
+      border: none; border-radius: 8px;
+      font-size: 15px; font-weight: 600;
+      cursor: pointer; transition: all 0.2s;
+      background: transparent; color: var(--text-secondary);
+      font-family: inherit;
+    }
+    .toggle-btn.active.buy-toggle {
+      background: rgba(255,71,87,0.2); color: var(--color-buy);
+    }
+    .toggle-btn.active.sell-toggle {
+      background: rgba(55,66,250,0.2); color: var(--color-sell);
+    }
+
+    /* Form */
+    .form-group {
+      margin-bottom: 16px;
+    }
+    .form-label {
+      display: block; font-size: 13px; color: var(--text-secondary);
+      margin-bottom: 6px;
+    }
+    .form-input {
+      width: 100%; padding: 12px 14px;
+      background: var(--bg-input); border: 1px solid rgba(255,255,255,0.08);
+      border-radius: 10px; color: var(--text-primary);
+      font-size: 16px; font-family: inherit;
+      outline: none; transition: border-color 0.2s;
+    }
+    .form-input:focus {
+      border-color: var(--color-accent);
+    }
+    .form-input::placeholder { color: var(--text-secondary); opacity: 0.5; }
+    .form-row {
+      display: flex; gap: 12px;
+    }
+    .form-row .form-group { flex: 1; }
+    .form-hint {
+      font-size: 12px; color: var(--text-secondary); margin-top: 4px;
+    }
+    .form-stock-name {
+      font-size: 13px; color: var(--color-accent); margin-top: 4px;
+      min-height: 18px;
+    }
+    .form-total {
+      background: var(--bg-input); border-radius: 10px;
+      padding: 14px; text-align: center; margin-bottom: 20px;
+    }
+    .form-total-label {
+      font-size: 13px; color: var(--text-secondary); margin-bottom: 4px;
+    }
+    .form-total-value {
+      font-size: 22px; font-weight: 700;
+    }
+    .btn-submit {
+      width: 100%; padding: 16px;
+      border: none; border-radius: 12px;
+      font-size: 16px; font-weight: 700;
+      cursor: pointer; transition: opacity 0.2s;
+      font-family: inherit;
+    }
+    .btn-submit.buy {
+      background: linear-gradient(135deg, var(--color-buy), #ff6b81);
+      color: white;
+    }
+    .btn-submit.sell {
+      background: linear-gradient(135deg, var(--color-sell), #5b67f5);
+      color: white;
+    }
+    .btn-submit:active { opacity: 0.8; }
+
+    /* Settings */
+    .settings-section {
+      background: var(--bg-card);
+      border-radius: var(--radius);
+      padding: 4px 0;
+      margin-bottom: 16px;
+      border: 1px solid rgba(255,255,255,0.05);
+    }
+    .settings-section-title {
+      font-size: 13px; color: var(--text-secondary);
+      padding: 12px 16px 8px;
+    }
+    .settings-item {
+      display: flex; align-items: center; justify-content: space-between;
+      padding: 14px 16px;
+      cursor: pointer; transition: background 0.2s;
+      border: none; background: none; width: 100%;
+      color: var(--text-primary); font-family: inherit; font-size: 15px;
+      text-align: left;
+    }
+    .settings-item:active { background: rgba(255,255,255,0.05); }
+    .settings-item + .settings-item {
+      border-top: 1px solid rgba(255,255,255,0.05);
+    }
+    .settings-item-icon { font-size: 18px; margin-right: 12px; }
+    .settings-item-text { flex: 1; }
+    .settings-item-arrow { color: var(--text-secondary); }
+    .settings-item.danger { color: var(--color-accent); }
+    .settings-info {
+      padding: 16px;
+      font-size: 13px; color: var(--text-secondary);
+      text-align: center; line-height: 1.6;
+    }
+
+    /* Empty State */
+    .empty-state {
+      text-align: center; padding: 48px 20px;
+      color: var(--text-secondary);
+    }
+    .empty-state-icon { font-size: 48px; margin-bottom: 12px; opacity: 0.5; }
+    .empty-state-text { font-size: 15px; line-height: 1.5; }
+
+    /* Loading */
+    .price-loading {
+      display: inline-block;
+      width: 12px; height: 12px;
+      border: 2px solid var(--text-secondary);
+      border-top-color: transparent;
+      border-radius: 50%;
+      animation: spin 0.8s linear infinite;
+    }
+    @keyframes spin { to { transform: rotate(360deg); } }
+    .price-stale {
+      font-size: 10px; color: var(--text-secondary);
+      background: rgba(255,255,255,0.05);
+      padding: 2px 6px; border-radius: 4px;
+    }
+
+    /* Confirm Dialog */
+    .confirm-overlay {
+      position: fixed; inset: 0;
+      background: rgba(0,0,0,0.7);
+      z-index: 300;
+      display: none;
+      align-items: center; justify-content: center;
+    }
+    .confirm-overlay.active { display: flex; }
+    .confirm-dialog {
+      background: var(--bg-card);
+      border-radius: 16px; padding: 24px;
+      width: 300px; text-align: center;
+    }
+    .confirm-msg {
+      font-size: 15px; margin-bottom: 20px; line-height: 1.5;
+    }
+    .confirm-btns { display: flex; gap: 12px; }
+    .confirm-btn {
+      flex: 1; padding: 12px;
+      border: none; border-radius: 10px;
+      font-size: 15px; font-weight: 600;
+      cursor: pointer; font-family: inherit;
+    }
+    .confirm-btn.cancel {
+      background: var(--bg-input); color: var(--text-primary);
+    }
+    .confirm-btn.ok {
+      background: var(--color-accent); color: white;
+    }
+
+    /* Toast */
+    .toast {
+      position: fixed;
+      top: calc(var(--header-height) + 12px);
+      left: 50%; transform: translateX(-50%) translateY(-100px);
+      background: var(--bg-card);
+      border: 1px solid rgba(255,255,255,0.1);
+      padding: 12px 20px;
+      border-radius: 10px;
+      font-size: 14px;
+      z-index: 400;
+      transition: transform 0.3s ease;
+      box-shadow: 0 4px 20px rgba(0,0,0,0.3);
+    }
+    .toast.show { transform: translateX(-50%) translateY(0); }
+
+    /* Scrollbar */
+    .tab-content-area::-webkit-scrollbar { width: 0; }
+
+    /* Manual Price Input */
+    .manual-price-input {
+      width: 80px; padding: 4px 8px;
+      background: var(--bg-input); border: 1px solid rgba(255,255,255,0.1);
+      border-radius: 6px; color: var(--text-primary);
+      font-size: 13px; text-align: right;
+      outline: none;
+    }
+    .manual-price-input:focus { border-color: var(--color-accent); }
+  </style>
+</head>
+<body>
+
+  <!-- Header -->
+  <header class="header">
+    <div>
+      <div class="header-title">My Portfolio</div>
+      <div class="header-sub" id="lastUpdated"></div>
+    </div>
+    <div class="header-actions">
+      <button class="header-btn" id="btnRefreshPrice" title="시세 새로고침">&#x21bb;</button>
+    </div>
+  </header>
+
+  <!-- Tab Content -->
+  <div class="tab-content-area">
+    <!-- Main Briefing Tab -->
+    <div class="tab-pane active" id="tabMain">
+      <div class="summary-card">
+        <div class="summary-label">총 평가금액</div>
+        <div class="summary-total" id="totalValue">&#8361;0</div>
+        <div class="summary-row">
+          <div class="summary-item">
+            <div class="summary-item-label">투자금액</div>
+            <div class="summary-item-value" id="totalInvested">&#8361;0</div>
+          </div>
+          <div class="summary-item">
+            <div class="summary-item-label">수익금</div>
+            <div class="summary-item-value" id="totalPnl">&#8361;0</div>
+          </div>
+          <div class="summary-item">
+            <div class="summary-item-label">수익률</div>
+            <div class="summary-item-value" id="totalReturn">0%</div>
+          </div>
+        </div>
+      </div>
+      <div class="section-title">보유종목</div>
+      <div id="holdingsList"></div>
+    </div>
+
+    <!-- Transactions Tab -->
+    <div class="tab-pane" id="tabTx">
+      <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:16px;">
+        <div class="section-title" style="margin-bottom:0">거래 내역</div>
+      </div>
+      <div id="txList"></div>
+    </div>
+
+    <!-- Settings Tab -->
+    <div class="tab-pane" id="tabSettings">
+      <div class="settings-section">
+        <div class="settings-section-title">데이터 관리</div>
+        <button class="settings-item" id="btnExport">
+          <span class="settings-item-text">JSON 내보내기 (Export)</span>
+          <span class="settings-item-arrow">&#x276F;</span>
+        </button>
+        <button class="settings-item" id="btnImport">
+          <span class="settings-item-text">JSON 가져오기 (Import)</span>
+          <span class="settings-item-arrow">&#x276F;</span>
+        </button>
+        <button class="settings-item danger" id="btnReset">
+          <span class="settings-item-text">데이터 초기화</span>
+          <span class="settings-item-arrow">&#x276F;</span>
+        </button>
+      </div>
+      <div class="settings-section">
+        <div class="settings-section-title">시세 조회 설정</div>
+        <div style="padding: 12px 16px;">
+          <label class="form-label">CORS 프록시 URL</label>
+          <input type="text" class="form-input" id="proxyUrlInput" placeholder="https://corsproxy.io/?url=">
+          <div class="form-hint">시세 조회 시 사용할 CORS 프록시 주소</div>
+        </div>
+        <button class="settings-item" id="btnSaveProxy">
+          <span class="settings-item-text">프록시 설정 저장</span>
+          <span class="settings-item-arrow">&#x276F;</span>
+        </button>
+      </div>
+      <div class="settings-info" id="settingsInfo"></div>
+    </div>
+  </div>
+
+  <!-- Bottom Nav -->
+  <nav class="bottom-nav">
+    <button class="nav-item active" data-tab="tabMain">
+      <span class="nav-icon">&#x1F4CA;</span>
+      <span class="nav-label">메인</span>
+    </button>
+    <button class="nav-item" data-tab="tabTx">
+      <span class="nav-icon">&#x1F4CB;</span>
+      <span class="nav-label">거래</span>
+    </button>
+    <button class="nav-item" data-tab="tabSettings">
+      <span class="nav-icon">&#x2699;</span>
+      <span class="nav-label">설정</span>
+    </button>
+  </nav>
+
+  <!-- FAB (Add Transaction) -->
+  <button class="fab" id="fabAdd" title="거래 추가">+</button>
+
+  <!-- Transaction Modal -->
+  <div class="modal-overlay" id="txModal">
+    <div class="modal">
+      <div class="modal-header">
+        <span class="modal-title" id="modalTitle">거래 추가</span>
+        <button class="modal-close" id="modalClose">&times;</button>
+      </div>
+
+      <div class="toggle-group">
+        <button class="toggle-btn buy-toggle active" id="toggleBuy">매수</button>
+        <button class="toggle-btn sell-toggle" id="toggleSell">매도</button>
+      </div>
+
+      <form id="txForm" autocomplete="off">
+        <div class="form-group">
+          <label class="form-label">종목코드</label>
+          <input type="text" class="form-input" id="inputCode" placeholder="예: 005930" maxlength="6" inputmode="numeric" pattern="[0-9]*">
+          <div class="form-stock-name" id="stockNameHint"></div>
+        </div>
+
+        <div class="form-row">
+          <div class="form-group">
+            <label class="form-label">날짜</label>
+            <input type="date" class="form-input" id="inputDate">
+          </div>
+        </div>
+
+        <div class="form-row">
+          <div class="form-group">
+            <label class="form-label">수량 (주)</label>
+            <input type="number" class="form-input" id="inputQty" placeholder="0" min="1" inputmode="numeric">
+          </div>
+          <div class="form-group">
+            <label class="form-label">단가 (원)</label>
+            <input type="number" class="form-input" id="inputPrice" placeholder="0" min="0" inputmode="numeric">
+          </div>
+        </div>
+
+        <div class="form-group">
+          <label class="form-label">수수료 + 세금 (원)</label>
+          <input type="number" class="form-input" id="inputFee" placeholder="자동 계산" min="0" inputmode="numeric">
+          <div class="form-hint" id="feeHint">매수: 약 0.015% | 매도: 약 0.25% (세금 포함)</div>
+        </div>
+
+        <div class="form-group">
+          <label class="form-label">메모 (선택)</label>
+          <input type="text" class="form-input" id="inputMemo" placeholder="메모 입력">
+        </div>
+
+        <div class="form-total">
+          <div class="form-total-label">총 거래금액</div>
+          <div class="form-total-value" id="txTotalAmount">&#8361;0</div>
+        </div>
+
+        <input type="hidden" id="editTxId" value="">
+        <button type="submit" class="btn-submit buy" id="btnSubmitTx">매수 등록</button>
+      </form>
+    </div>
+  </div>
+
+  <!-- Confirm Dialog -->
+  <div class="confirm-overlay" id="confirmOverlay">
+    <div class="confirm-dialog">
+      <div class="confirm-msg" id="confirmMsg">정말 삭제하시겠습니까?</div>
+      <div class="confirm-btns">
+        <button class="confirm-btn cancel" id="confirmCancel">취소</button>
+        <button class="confirm-btn ok" id="confirmOk">확인</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Toast -->
+  <div class="toast" id="toast"></div>
+
+  <!-- Hidden File Input -->
+  <input type="file" id="fileInput" accept=".json" style="display:none">
+
+  <script>
+    // ===================== DataStore =====================
+    const DataStore = {
+      STORAGE_KEY: 'kr-portfolio-data',
+      PRICE_CACHE_KEY: 'kr-price-cache',
+      PROXY_KEY: 'kr-proxy-url',
+
+      getEmpty() {
+        return {
+          meta: { version: 1, lastUpdated: new Date().toISOString(), baseCurrency: 'KRW' },
+          stocks: {},
+          transactions: []
+        };
+      },
+
+      load() {
+        try {
+          const raw = localStorage.getItem(this.STORAGE_KEY);
+          if (raw) return JSON.parse(raw);
+        } catch (e) { /* ignore */ }
+        return null;
+      },
+
+      save(data) {
+        data.meta.lastUpdated = new Date().toISOString();
+        localStorage.setItem(this.STORAGE_KEY, JSON.stringify(data));
+      },
+
+      async initFromFile() {
+        try {
+          const resp = await fetch('./portfolio.json');
+          if (resp.ok) {
+            const data = await resp.json();
+            this.save(data);
+            return data;
+          }
+        } catch (e) { /* ignore */ }
+        return this.getEmpty();
+      },
+
+      async init() {
+        let data = this.load();
+        if (!data) {
+          data = await this.initFromFile();
+          this.save(data);
+        }
+        return data;
+      },
+
+      addTransaction(data, tx) {
+        data.transactions.push(tx);
+        if (tx.code && !data.stocks[tx.code]) {
+          data.stocks[tx.code] = { name: tx.stockName || tx.code, market: 'KOSPI' };
+        } else if (tx.code && tx.stockName) {
+          data.stocks[tx.code].name = tx.stockName;
+        }
+        this.save(data);
+      },
+
+      updateTransaction(data, txId, updates) {
+        const idx = data.transactions.findIndex(t => t.id === txId);
+        if (idx !== -1) {
+          Object.assign(data.transactions[idx], updates);
+          this.save(data);
+        }
+      },
+
+      deleteTransaction(data, txId) {
+        data.transactions = data.transactions.filter(t => t.id !== txId);
+        this.save(data);
+      },
+
+      exportJSON(data) {
+        const blob = new Blob([JSON.stringify(data, null, 2)], { type: 'application/json' });
+        const url = URL.createObjectURL(blob);
+        const a = document.createElement('a');
+        a.href = url;
+        a.download = `portfolio_${new Date().toISOString().slice(0,10)}.json`;
+        a.click();
+        URL.revokeObjectURL(url);
+      },
+
+      importJSON(file) {
+        return new Promise((resolve, reject) => {
+          const reader = new FileReader();
+          reader.onload = (e) => {
+            try {
+              const data = JSON.parse(e.target.result);
+              if (!data.meta || !data.transactions) {
+                reject(new Error('올바른 포트폴리오 JSON 파일이 아닙니다.'));
+                return;
+              }
+              this.save(data);
+              resolve(data);
+            } catch (err) {
+              reject(new Error('JSON 파싱 오류: ' + err.message));
+            }
+          };
+          reader.onerror = () => reject(new Error('파일을 읽을 수 없습니다.'));
+          reader.readAsText(file);
+        });
+      },
+
+      reset() {
+        localStorage.removeItem(this.STORAGE_KEY);
+        localStorage.removeItem(this.PRICE_CACHE_KEY);
+      },
+
+      // Price Cache
+      getPriceCache() {
+        try {
+          const raw = localStorage.getItem(this.PRICE_CACHE_KEY);
+          if (raw) return JSON.parse(raw);
+        } catch (e) { /* ignore */ }
+        return {};
+      },
+
+      setPriceCache(code, price) {
+        const cache = this.getPriceCache();
+        cache[code] = { price, timestamp: Date.now() };
+        localStorage.setItem(this.PRICE_CACHE_KEY, JSON.stringify(cache));
+      },
+
+      getProxyUrl() {
+        return localStorage.getItem(this.PROXY_KEY) || 'https://corsproxy.io/?url=';
+      },
+
+      setProxyUrl(url) {
+        localStorage.setItem(this.PROXY_KEY, url);
+      }
+    };
+
+    // ===================== PriceService =====================
+    const PriceService = {
+      CACHE_TTL: 5 * 60 * 1000, // 5 minutes
+
+      async fetchPrice(stockCode) {
+        // Check cache first
+        const cache = DataStore.getPriceCache();
+        const cached = cache[stockCode];
+        if (cached && Date.now() - cached.timestamp < this.CACHE_TTL) {
+          return { price: cached.price, stale: false, timestamp: cached.timestamp };
+        }
+
+        // Try fetching from Naver Finance chart API (simpler, GET-based)
+        const proxyUrl = DataStore.getProxyUrl();
+        try {
+          const naverUrl = `https://fchart.stock.naver.com/sise.nhn?symbol=${stockCode}&timeframe=day&count=1&requestType=0`;
+          const resp = await fetch(proxyUrl + encodeURIComponent(naverUrl));
+          const text = await resp.text();
+
+          // Parse XML response - extract last close price
+          const match = text.match(/<item data="([^"]+)"/);
+          if (match) {
+            const parts = match[1].split('|');
+            // Format: date|open|high|low|close|volume
+            const closePrice = parseInt(parts[4]);
+            if (!isNaN(closePrice) && closePrice > 0) {
+              DataStore.setPriceCache(stockCode, closePrice);
+              return { price: closePrice, stale: false, timestamp: Date.now() };
+            }
+          }
+        } catch (e) {
+          // Naver failed, try alternative
+        }
+
+        // Fallback: return cached even if stale
+        if (cached) {
+          return { price: cached.price, stale: true, timestamp: cached.timestamp };
+        }
+
+        return { price: null, stale: false, timestamp: null };
+      },
+
+      async fetchAllPrices(codes) {
+        const results = {};
+        for (const code of codes) {
+          results[code] = await this.fetchPrice(code);
+          // Small delay to avoid rate limiting
+          await new Promise(r => setTimeout(r, 300));
+        }
+        return results;
+      },
+
+      async lookupStockName(code) {
+        // Check known stocks first
+        const known = KNOWN_STOCKS[code];
+        if (known) return known;
+
+        // Try fetching from API
+        const proxyUrl = DataStore.getProxyUrl();
+        try {
+          const naverUrl = `https://fchart.stock.naver.com/sise.nhn?symbol=${code}&timeframe=day&count=1&requestType=0`;
+          const resp = await fetch(proxyUrl + encodeURIComponent(naverUrl));
+          const text = await resp.text();
+          // If we get valid data back, the stock exists
+          if (text.includes('<item data=')) {
+            return null; // Stock exists but name unknown from this API
+          }
+        } catch (e) { /* ignore */ }
+        return null;
+      }
+    };
+
+    // Known Korean stocks dictionary
+    const KNOWN_STOCKS = {
+      '005930': '삼성전자', '000660': 'SK하이닉스', '035420': 'NAVER',
+      '005380': '현대차', '006400': '삼성SDI', '051910': 'LG화학',
+      '035720': '카카오', '005490': 'POSCO홀딩스', '055550': '신한지주',
+      '105560': 'KB금융', '003550': 'LG', '017670': 'SK텔레콤',
+      '034730': 'SK이노베이션', '015760': '한국전력', '032830': '삼성생명',
+      '003670': '포스코퓨처엠', '066570': 'LG전자', '028260': '삼성물산',
+      '012330': '현대모비스', '096770': 'SK이노베이션',
+      '033780': 'KT&G', '030200': 'KT', '086790': '하나금융지주',
+      '316140': '우리금융지주', '000270': '기아', '010130': '고려아연',
+      '034020': '두산에너빌리티', '009150': '삼성전기', '018260': '삼성에스디에스',
+      '010950': 'S-Oil', '011200': 'HMM', '024110': '기업은행',
+      '259960': '크래프톤', '361610': 'SK아이이테크놀로지',
+      '003490': '대한항공', '004020': '현대제철', '267250': '현대중공업',
+      '010140': '삼성중공업', '009540': '한국조선해양',
+      '373220': 'LG에너지솔루션', '352820': '하이브', '377300': '카카오페이',
+      '307950': '현대오토에버', '247540': '에코프로비엠', '086520': '에코프로',
+      '042700': '한미반도체'
+    };
+
+    // ===================== Portfolio =====================
+    const Portfolio = {
+      computeHoldings(data) {
+        const holdings = {};
+        const sorted = [...data.transactions].sort((a, b) => a.date.localeCompare(b.date));
+
+        for (const tx of sorted) {
+          if (!holdings[tx.code]) {
+            holdings[tx.code] = {
+              code: tx.code,
+              name: data.stocks[tx.code]?.name || KNOWN_STOCKS[tx.code] || tx.code,
+              market: data.stocks[tx.code]?.market || 'KOSPI',
+              qty: 0,
+              totalCost: 0,
+              realizedPnl: 0
+            };
+          }
+          const h = holdings[tx.code];
+
+          if (tx.type === 'buy') {
+            h.totalCost += (tx.quantity * tx.price) + (tx.fee || 0);
+            h.qty += tx.quantity;
+          } else if (tx.type === 'sell') {
+            if (h.qty > 0) {
+              const avgCost = h.totalCost / h.qty;
+              const sellRevenue = (tx.quantity * tx.price) - (tx.fee || 0);
+              const costBasis = tx.quantity * avgCost;
+              h.realizedPnl += sellRevenue - costBasis;
+              h.totalCost -= tx.quantity * avgCost;
+              h.qty -= tx.quantity;
+            }
+          }
+        }
+
+        return Object.values(holdings)
+          .filter(h => h.qty > 0)
+          .map(h => ({
+            ...h,
+            avgPrice: h.qty > 0 ? Math.round(h.totalCost / h.qty) : 0
+          }));
+      },
+
+      computeSummary(holdings, prices) {
+        let totalInvested = 0;
+        let totalValue = 0;
+
+        for (const h of holdings) {
+          totalInvested += h.totalCost;
+          const currentPrice = prices[h.code]?.price || h.avgPrice;
+          totalValue += h.qty * currentPrice;
+        }
+
+        const totalPnl = totalValue - totalInvested;
+        const totalReturn = totalInvested > 0 ? (totalPnl / totalInvested) * 100 : 0;
+
+        return { totalInvested, totalValue, totalPnl, totalReturn };
+      }
+    };
+
+    // ===================== UI =====================
+    const UI = {
+      formatKRW(num) {
+        if (num === null || num === undefined) return '-';
+        const abs = Math.abs(Math.round(num));
+        const formatted = abs.toLocaleString('ko-KR');
+        const sign = num > 0 ? '+' : num < 0 ? '-' : '';
+        return sign + '\u20A9' + formatted;
+      },
+
+      formatKRWNoSign(num) {
+        if (num === null || num === undefined) return '-';
+        return '\u20A9' + Math.round(num).toLocaleString('ko-KR');
+      },
+
+      formatPercent(num) {
+        if (num === null || num === undefined) return '-';
+        const sign = num > 0 ? '+' : '';
+        return sign + num.toFixed(2) + '%';
+      },
+
+      pnlClass(num) {
+        if (num > 0) return 'gain';
+        if (num < 0) return 'loss';
+        return 'neutral';
+      },
+
+      formatDate(dateStr) {
+        if (!dateStr) return '';
+        const d = new Date(dateStr + 'T00:00:00');
+        return `${d.getFullYear()}.${String(d.getMonth()+1).padStart(2,'0')}.${String(d.getDate()).padStart(2,'0')}`;
+      },
+
+      formatTime(timestamp) {
+        if (!timestamp) return '';
+        const d = new Date(timestamp);
+        return `${String(d.getHours()).padStart(2,'0')}:${String(d.getMinutes()).padStart(2,'0')}`;
+      },
+
+      renderMain(holdings, prices, summary) {
+        // Summary
+        document.getElementById('totalValue').textContent = this.formatKRWNoSign(summary.totalValue);
+        document.getElementById('totalValue').className = 'summary-total ' + this.pnlClass(summary.totalPnl);
+
+        document.getElementById('totalInvested').textContent = this.formatKRWNoSign(summary.totalInvested);
+
+        document.getElementById('totalPnl').textContent = this.formatKRW(summary.totalPnl);
+        document.getElementById('totalPnl').className = 'summary-item-value ' + this.pnlClass(summary.totalPnl);
+
+        document.getElementById('totalReturn').textContent = this.formatPercent(summary.totalReturn);
+        document.getElementById('totalReturn').className = 'summary-item-value ' + this.pnlClass(summary.totalReturn);
+
+        // Holdings list
+        const container = document.getElementById('holdingsList');
+        if (holdings.length === 0) {
+          container.innerHTML = `
+            <div class="empty-state">
+              <div class="empty-state-icon">&#x1F4C8;</div>
+              <div class="empty-state-text">보유 종목이 없습니다.<br>거래를 추가해 보세요.</div>
+            </div>`;
+          return;
+        }
+
+        container.innerHTML = holdings.map(h => {
+          const priceData = prices[h.code];
+          const currentPrice = priceData?.price || h.avgPrice;
+          const evalAmount = h.qty * currentPrice;
+          const pnl = evalAmount - h.totalCost;
+          const pnlPercent = h.totalCost > 0 ? (pnl / h.totalCost) * 100 : 0;
+          const staleTag = priceData?.stale ? '<span class="price-stale">지연</span>' : '';
+          const priceDisplay = priceData?.price
+            ? this.formatKRWNoSign(currentPrice)
+            : `<input type="number" class="manual-price-input" data-code="${h.code}" value="${currentPrice}" placeholder="현재가">`;
+
+          return `
+            <div class="holding-card">
+              <div class="holding-top">
+                <div>
+                  <div class="holding-name">${h.name}</div>
+                  <div class="holding-code">${h.code} | ${h.market}</div>
+                </div>
+                <div>
+                  <div class="holding-current-price">${priceDisplay} ${staleTag}</div>
+                  <div class="holding-price-label">현재가</div>
+                </div>
+              </div>
+              <div class="holding-bottom">
+                <div class="holding-info">
+                  ${h.qty}주 | 평균 ${this.formatKRWNoSign(h.avgPrice)}<br>
+                  평가 ${this.formatKRWNoSign(evalAmount)}
+                </div>
+                <div class="holding-pnl">
+                  <div class="holding-pnl-amount ${this.pnlClass(pnl)}">${this.formatKRW(pnl)}</div>
+                  <div class="holding-pnl-percent ${this.pnlClass(pnlPercent)}">${this.formatPercent(pnlPercent)}</div>
+                </div>
+              </div>
+            </div>`;
+        }).join('');
+
+        // Bind manual price inputs
+        container.querySelectorAll('.manual-price-input').forEach(input => {
+          input.addEventListener('change', (e) => {
+            const code = e.target.dataset.code;
+            const price = parseInt(e.target.value);
+            if (!isNaN(price) && price > 0) {
+              DataStore.setPriceCache(code, price);
+              App.refresh();
+            }
+          });
+          // Prevent card click when interacting with input
+          input.addEventListener('click', (e) => e.stopPropagation());
+        });
+      },
+
+      renderTransactions(data) {
+        const container = document.getElementById('txList');
+        const sorted = [...data.transactions].sort((a, b) => b.date.localeCompare(a.date) || b.id.localeCompare(a.id));
+
+        if (sorted.length === 0) {
+          container.innerHTML = `
+            <div class="empty-state">
+              <div class="empty-state-icon">&#x1F4DD;</div>
+              <div class="empty-state-text">거래 내역이 없습니다.<br>+ 버튼을 눌러 거래를 추가하세요.</div>
+            </div>`;
+          return;
+        }
+
+        container.innerHTML = sorted.map(tx => {
+          const stockName = data.stocks[tx.code]?.name || KNOWN_STOCKS[tx.code] || tx.code;
+          const total = tx.quantity * tx.price;
+          const typeLabel = tx.type === 'buy' ? '매수' : '매도';
+
+          return `
+            <div class="tx-card" data-id="${tx.id}">
+              <div class="tx-type-badge ${tx.type}">${typeLabel}</div>
+              <div class="tx-info">
+                <div class="tx-stock-name">${stockName}</div>
+                <div class="tx-detail">${tx.quantity}주 × ${this.formatKRWNoSign(tx.price)}${tx.memo ? ' | ' + tx.memo : ''}</div>
+                <div class="tx-actions">
+                  <button class="tx-action-btn" onclick="App.editTransaction('${tx.id}')">수정</button>
+                  <button class="tx-action-btn delete" onclick="App.confirmDeleteTx('${tx.id}')">삭제</button>
+                </div>
+              </div>
+              <div class="tx-right">
+                <div class="tx-amount ${tx.type === 'buy' ? 'gain' : 'loss'}">${this.formatKRWNoSign(total)}</div>
+                <div class="tx-date">${this.formatDate(tx.date)}</div>
+              </div>
+            </div>`;
+        }).join('');
+      },
+
+      renderSettings(data) {
+        const txCount = data.transactions.length;
+        const stockCount = Object.keys(data.stocks).length;
+        const updated = data.meta.lastUpdated ? new Date(data.meta.lastUpdated).toLocaleString('ko-KR') : '-';
+
+        document.getElementById('settingsInfo').innerHTML =
+          `종목 ${stockCount}개 | 거래 ${txCount}건<br>마지막 수정: ${updated}<br><br>v1.0.0 | GitHub Pages`;
+
+        document.getElementById('proxyUrlInput').value = DataStore.getProxyUrl();
+      },
+
+      showToast(msg) {
+        const toast = document.getElementById('toast');
+        toast.textContent = msg;
+        toast.classList.add('show');
+        setTimeout(() => toast.classList.remove('show'), 2500);
+      }
+    };
+
+    // ===================== App =====================
+    const App = {
+      data: null,
+      prices: {},
+      currentTab: 'tabMain',
+      refreshTimer: null,
+      pendingDeleteTxId: null,
+
+      async init() {
+        this.data = await DataStore.init();
+        this.setupNav();
+        this.setupModal();
+        this.setupSettings();
+        this.setupConfirm();
+        this.refresh();
+        this.fetchPrices();
+        this.startAutoRefresh();
+      },
+
+      async refresh() {
+        const holdings = Portfolio.computeHoldings(this.data);
+        const priceCache = DataStore.getPriceCache();
+        // Merge cached prices
+        for (const h of holdings) {
+          if (priceCache[h.code]) {
+            this.prices[h.code] = {
+              price: priceCache[h.code].price,
+              stale: Date.now() - priceCache[h.code].timestamp > PriceService.CACHE_TTL,
+              timestamp: priceCache[h.code].timestamp
+            };
+          }
+        }
+        const summary = Portfolio.computeSummary(holdings, this.prices);
+        UI.renderMain(holdings, this.prices, summary);
+        UI.renderTransactions(this.data);
+        UI.renderSettings(this.data);
+
+        // Update header time
+        const timestamps = Object.values(this.prices).map(p => p.timestamp).filter(Boolean);
+        if (timestamps.length > 0) {
+          const latest = Math.max(...timestamps);
+          document.getElementById('lastUpdated').textContent = `시세 ${UI.formatTime(latest)} 기준`;
+        }
+      },
+
+      async fetchPrices() {
+        const holdings = Portfolio.computeHoldings(this.data);
+        const codes = holdings.map(h => h.code);
+        if (codes.length === 0) return;
+
+        document.getElementById('btnRefreshPrice').innerHTML = '<span class="price-loading"></span>';
+
+        this.prices = await PriceService.fetchAllPrices(codes);
+        this.refresh();
+
+        document.getElementById('btnRefreshPrice').innerHTML = '&#x21bb;';
+      },
+
+      startAutoRefresh() {
+        // Auto refresh during Korean market hours
+        this.refreshTimer = setInterval(() => {
+          const now = new Date();
+          const kstHour = (now.getUTCHours() + 9) % 24;
+          const day = now.getUTCDay();
+          // Weekdays, 9:00 ~ 15:30 KST
+          if (day >= 1 && day <= 5 && kstHour >= 9 && (kstHour < 15 || (kstHour === 15 && now.getUTCMinutes() < 30))) {
+            this.fetchPrices();
+          }
+        }, 5 * 60 * 1000);
+      },
+
+      // Navigation
+      setupNav() {
+        document.querySelectorAll('.nav-item').forEach(btn => {
+          btn.addEventListener('click', () => {
+            const tab = btn.dataset.tab;
+            this.switchTab(tab);
+          });
+        });
+      },
+
+      switchTab(tabId) {
+        this.currentTab = tabId;
+        document.querySelectorAll('.tab-pane').forEach(p => p.classList.remove('active'));
+        document.querySelectorAll('.nav-item').forEach(n => n.classList.remove('active'));
+        document.getElementById(tabId).classList.add('active');
+        document.querySelector(`[data-tab="${tabId}"]`).classList.add('active');
+
+        // Show/hide FAB
+        const fab = document.getElementById('fabAdd');
+        fab.classList.toggle('hidden', tabId === 'tabSettings');
+      },
+
+      // Modal
+      setupModal() {
+        const fab = document.getElementById('fabAdd');
+        const modal = document.getElementById('txModal');
+        const closeBtn = document.getElementById('modalClose');
+        const toggleBuy = document.getElementById('toggleBuy');
+        const toggleSell = document.getElementById('toggleSell');
+        const form = document.getElementById('txForm');
+        const inputCode = document.getElementById('inputCode');
+        const inputQty = document.getElementById('inputQty');
+        const inputPrice = document.getElementById('inputPrice');
+        const inputFee = document.getElementById('inputFee');
+
+        fab.addEventListener('click', () => this.openModal());
+        closeBtn.addEventListener('click', () => this.closeModal());
+        modal.addEventListener('click', (e) => {
+          if (e.target === modal) this.closeModal();
+        });
+
+        toggleBuy.addEventListener('click', () => this.setTxType('buy'));
+        toggleSell.addEventListener('click', () => this.setTxType('sell'));
+
+        // Auto-lookup stock name
+        inputCode.addEventListener('input', () => {
+          const code = inputCode.value.trim();
+          const hint = document.getElementById('stockNameHint');
+          if (code.length === 6) {
+            const name = this.data.stocks[code]?.name || KNOWN_STOCKS[code];
+            hint.textContent = name || '종목 조회 중...';
+            if (!name) {
+              hint.textContent = '등록되지 않은 종목 (거래 시 자동 등록)';
+            }
+          } else {
+            hint.textContent = '';
+          }
+        });
+
+        // Auto calculate fee & total
+        const calcTotal = () => {
+          const qty = parseInt(inputQty.value) || 0;
+          const price = parseInt(inputPrice.value) || 0;
+          const total = qty * price;
+
+          // Auto fee if empty
+          if (!inputFee.value && total > 0) {
+            const type = toggleBuy.classList.contains('active') ? 'buy' : 'sell';
+            const feeRate = type === 'buy' ? 0.00015 : 0.0025;
+            const autoFee = Math.round(total * feeRate);
+            inputFee.placeholder = `자동: ${autoFee.toLocaleString()}`;
+          }
+
+          const fee = parseInt(inputFee.value) || 0;
+          const grandTotal = total + fee;
+          document.getElementById('txTotalAmount').textContent = UI.formatKRWNoSign(grandTotal);
+        };
+
+        inputQty.addEventListener('input', calcTotal);
+        inputPrice.addEventListener('input', calcTotal);
+        inputFee.addEventListener('input', calcTotal);
+
+        // Submit
+        form.addEventListener('submit', (e) => {
+          e.preventDefault();
+          this.submitTransaction();
+        });
+
+        // Refresh price button
+        document.getElementById('btnRefreshPrice').addEventListener('click', () => this.fetchPrices());
+      },
+
+      txType: 'buy',
+
+      setTxType(type) {
+        this.txType = type;
+        const toggleBuy = document.getElementById('toggleBuy');
+        const toggleSell = document.getElementById('toggleSell');
+        const submitBtn = document.getElementById('btnSubmitTx');
+
+        toggleBuy.classList.toggle('active', type === 'buy');
+        toggleSell.classList.toggle('active', type === 'sell');
+        submitBtn.className = 'btn-submit ' + type;
+        submitBtn.textContent = type === 'buy' ? '매수 등록' : '매도 등록';
+
+        // Recalculate fee hint
+        const feeHint = document.getElementById('feeHint');
+        feeHint.textContent = type === 'buy'
+          ? '매수: 약 0.015% (증권사 수수료)'
+          : '매도: 약 0.25% (수수료 + 세금)';
+
+        // Trigger recalc
+        document.getElementById('inputQty').dispatchEvent(new Event('input'));
+      },
+
+      openModal(editTx = null) {
+        const modal = document.getElementById('txModal');
+        const form = document.getElementById('txForm');
+        const title = document.getElementById('modalTitle');
+        const editId = document.getElementById('editTxId');
+
+        form.reset();
+        document.getElementById('stockNameHint').textContent = '';
+        document.getElementById('txTotalAmount').textContent = '\u20A90';
+
+        if (editTx) {
+          title.textContent = '거래 수정';
+          editId.value = editTx.id;
+          document.getElementById('inputCode').value = editTx.code;
+          document.getElementById('inputDate').value = editTx.date;
+          document.getElementById('inputQty').value = editTx.quantity;
+          document.getElementById('inputPrice').value = editTx.price;
+          document.getElementById('inputFee').value = editTx.fee || '';
+          document.getElementById('inputMemo').value = editTx.memo || '';
+          this.setTxType(editTx.type);
+
+          // Trigger name lookup
+          document.getElementById('inputCode').dispatchEvent(new Event('input'));
+          // Trigger total calc
+          document.getElementById('inputQty').dispatchEvent(new Event('input'));
+        } else {
+          title.textContent = '거래 추가';
+          editId.value = '';
+          this.setTxType('buy');
+          // Default date to today
+          document.getElementById('inputDate').value = new Date().toISOString().slice(0, 10);
+        }
+
+        modal.classList.add('active');
+      },
+
+      closeModal() {
+        document.getElementById('txModal').classList.remove('active');
+      },
+
+      submitTransaction() {
+        const code = document.getElementById('inputCode').value.trim();
+        const date = document.getElementById('inputDate').value;
+        const qty = parseInt(document.getElementById('inputQty').value);
+        const price = parseInt(document.getElementById('inputPrice').value);
+        const feeInput = document.getElementById('inputFee').value;
+        const memo = document.getElementById('inputMemo').value.trim();
+        const editId = document.getElementById('editTxId').value;
+
+        // Validation
+        if (!code || code.length !== 6) {
+          UI.showToast('종목코드 6자리를 입력해주세요.');
+          return;
+        }
+        if (!date) { UI.showToast('날짜를 입력해주세요.'); return; }
+        if (!qty || qty <= 0) { UI.showToast('수량을 입력해주세요.'); return; }
+        if (!price || price <= 0) { UI.showToast('단가를 입력해주세요.'); return; }
+
+        // Sell validation
+        if (this.txType === 'sell') {
+          const holdings = Portfolio.computeHoldings(this.data);
+          const holding = holdings.find(h => h.code === code);
+          const currentQty = holding ? holding.qty : 0;
+          // If editing, add back the original qty
+          if (editId) {
+            const origTx = this.data.transactions.find(t => t.id === editId);
+            if (origTx && origTx.type === 'sell') {
+              // Editing an existing sell - don't double count
+            }
+          }
+          if (!holding || qty > currentQty) {
+            UI.showToast(`보유 수량(${currentQty}주)을 초과할 수 없습니다.`);
+            return;
+          }
+        }
+
+        const total = qty * price;
+        const feeRate = this.txType === 'buy' ? 0.00015 : 0.0025;
+        const fee = feeInput ? parseInt(feeInput) : Math.round(total * feeRate);
+
+        const stockName = this.data.stocks[code]?.name || KNOWN_STOCKS[code] || code;
+
+        if (editId) {
+          // Update existing
+          DataStore.updateTransaction(this.data, editId, {
+            code, type: this.txType, date, quantity: qty, price, fee, memo
+          });
+          // Update stock name
+          if (!this.data.stocks[code]) {
+            this.data.stocks[code] = { name: stockName, market: 'KOSPI' };
+          }
+          DataStore.save(this.data);
+          UI.showToast('거래가 수정되었습니다.');
+        } else {
+          // New transaction
+          const tx = {
+            id: 'tx_' + Date.now(),
+            code, type: this.txType, date, quantity: qty, price, fee, memo, stockName
+          };
+          DataStore.addTransaction(this.data, tx);
+          UI.showToast(this.txType === 'buy' ? '매수 거래가 등록되었습니다.' : '매도 거래가 등록되었습니다.');
+        }
+
+        this.closeModal();
+        this.refresh();
+
+        // Fetch price for newly added stock
+        if (!this.prices[code]) {
+          PriceService.fetchPrice(code).then(result => {
+            this.prices[code] = result;
+            this.refresh();
+          });
+        }
+      },
+
+      editTransaction(txId) {
+        const tx = this.data.transactions.find(t => t.id === txId);
+        if (tx) this.openModal(tx);
+      },
+
+      confirmDeleteTx(txId) {
+        this.pendingDeleteTxId = txId;
+        document.getElementById('confirmMsg').textContent = '이 거래를 삭제하시겠습니까?';
+        document.getElementById('confirmOverlay').classList.add('active');
+      },
+
+      setupConfirm() {
+        document.getElementById('confirmCancel').addEventListener('click', () => {
+          document.getElementById('confirmOverlay').classList.remove('active');
+          this.pendingDeleteTxId = null;
+          this.pendingAction = null;
+        });
+
+        document.getElementById('confirmOk').addEventListener('click', () => {
+          document.getElementById('confirmOverlay').classList.remove('active');
+
+          if (this.pendingDeleteTxId) {
+            DataStore.deleteTransaction(this.data, this.pendingDeleteTxId);
+            this.pendingDeleteTxId = null;
+            UI.showToast('거래가 삭제되었습니다.');
+            this.refresh();
+          }
+
+          if (this.pendingAction) {
+            this.pendingAction();
+            this.pendingAction = null;
+          }
+        });
+      },
+
+      // Settings
+      setupSettings() {
+        document.getElementById('btnExport').addEventListener('click', () => {
+          DataStore.exportJSON(this.data);
+          UI.showToast('JSON 파일이 다운로드됩니다.');
+        });
+
+        document.getElementById('btnImport').addEventListener('click', () => {
+          document.getElementById('fileInput').click();
+        });
+
+        document.getElementById('fileInput').addEventListener('change', async (e) => {
+          const file = e.target.files[0];
+          if (!file) return;
+          try {
+            this.data = await DataStore.importJSON(file);
+            this.refresh();
+            this.fetchPrices();
+            UI.showToast('데이터를 성공적으로 가져왔습니다.');
+          } catch (err) {
+            UI.showToast(err.message);
+          }
+          e.target.value = '';
+        });
+
+        document.getElementById('btnReset').addEventListener('click', () => {
+          this.pendingAction = () => {
+            DataStore.reset();
+            this.data = DataStore.getEmpty();
+            this.prices = {};
+            DataStore.save(this.data);
+            this.refresh();
+            UI.showToast('모든 데이터가 초기화되었습니다.');
+          };
+          document.getElementById('confirmMsg').textContent = '모든 데이터가 삭제됩니다. 초기화하시겠습니까?';
+          document.getElementById('confirmOverlay').classList.add('active');
+        });
+
+        document.getElementById('btnSaveProxy').addEventListener('click', () => {
+          const url = document.getElementById('proxyUrlInput').value.trim();
+          DataStore.setProxyUrl(url);
+          UI.showToast('프록시 설정이 저장되었습니다.');
+        });
+      }
+    };
+
+    // ===================== Start =====================
+    document.addEventListener('DOMContentLoaded', () => App.init());
+  </script>
+</body>
+</html>
