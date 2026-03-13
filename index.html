@@ -824,6 +824,28 @@
     const PriceService = {
       CACHE_TTL: 5 * 60 * 1000,
 
+      PROXY_LIST: [
+        'https://api.allorigins.win/raw?url=',
+        'https://corsproxy.io/?url=',
+        'https://api.codetabs.com/v1/proxy?quest='
+      ],
+
+      async proxyFetch(url) {
+        // 사용자 설정 프록시 먼저 시도
+        const custom = DataStore.getProxyUrl();
+        const proxies = [custom, ...this.PROXY_LIST.filter(p => p !== custom)];
+
+        for (const proxy of proxies) {
+          try {
+            const resp = await fetch(proxy + encodeURIComponent(url), { signal: AbortSignal.timeout(8000) });
+            if (resp.ok) {
+              return await resp.text();
+            }
+          } catch (e) { /* try next proxy */ }
+        }
+        return null;
+      },
+
       async fetchPrice(stockCode) {
         const cache = DataStore.getPriceCache();
         const cached = cache[stockCode];
@@ -831,35 +853,33 @@
           return { price: cached.price, stale: false, timestamp: cached.timestamp };
         }
 
-        const proxyUrl = DataStore.getProxyUrl();
-
         // 1차: Naver Finance 차트 API
         try {
-          const naverUrl = `https://fchart.stock.naver.com/sise.nhn?symbol=${stockCode}&timeframe=day&count=1&requestType=0`;
-          const resp = await fetch(proxyUrl + encodeURIComponent(naverUrl));
-          const text = await resp.text();
-          const match = text.match(/<item data="([^"]+)"/);
-          if (match) {
-            const parts = match[1].split('|');
-            const closePrice = parseInt(parts[4]);
-            if (!isNaN(closePrice) && closePrice > 0) {
-              DataStore.setPriceCache(stockCode, closePrice);
-              return { price: closePrice, stale: false, timestamp: Date.now() };
+          const text = await this.proxyFetch(`https://fchart.stock.naver.com/sise.nhn?symbol=${stockCode}&timeframe=day&count=1&requestType=0`);
+          if (text) {
+            const match = text.match(/<item data="([^"]+)"/);
+            if (match) {
+              const parts = match[1].split('|');
+              const closePrice = parseInt(parts[4]);
+              if (!isNaN(closePrice) && closePrice > 0) {
+                DataStore.setPriceCache(stockCode, closePrice);
+                return { price: closePrice, stale: false, timestamp: Date.now() };
+              }
             }
           }
         } catch (e) { /* try fallback */ }
 
         // 2차: Naver Finance 메인 페이지 스크래핑
         try {
-          const pageUrl = `https://finance.naver.com/item/main.naver?code=${stockCode}`;
-          const resp = await fetch(proxyUrl + encodeURIComponent(pageUrl));
-          const html = await resp.text();
-          const match = html.match(/today">[\s\S]*?<span class="blind">([0-9,]+)<\/span>/);
-          if (match) {
-            const price = parseInt(match[1].replace(/,/g, ''));
-            if (!isNaN(price) && price > 0) {
-              DataStore.setPriceCache(stockCode, price);
-              return { price, stale: false, timestamp: Date.now() };
+          const html = await this.proxyFetch(`https://finance.naver.com/item/main.naver?code=${stockCode}`);
+          if (html) {
+            const match = html.match(/today">[\s\S]*?<span class="blind">([0-9,]+)<\/span>/);
+            if (match) {
+              const price = parseInt(match[1].replace(/,/g, ''));
+              if (!isNaN(price) && price > 0) {
+                DataStore.setPriceCache(stockCode, price);
+                return { price, stale: false, timestamp: Date.now() };
+              }
             }
           }
         } catch (e) { /* fallback */ }
