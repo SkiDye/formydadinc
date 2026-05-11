@@ -698,6 +698,7 @@
       STORAGE_KEY: 'kr-portfolio-data',
       PRICE_CACHE_KEY: 'kr-price-cache',
       PROXY_KEY: 'kr-proxy-url',
+      FILE_SYNC_KEY: 'kr-portfolio-file-synced-at',
 
       getEmpty() {
         return {
@@ -720,31 +721,73 @@
         localStorage.setItem(this.STORAGE_KEY, JSON.stringify(data));
       },
 
-      async initFromFile() {
+      getLastFileSync() {
+        return localStorage.getItem(this.FILE_SYNC_KEY) || '';
+      },
+
+      setLastFileSync(timestamp) {
+        if (timestamp) localStorage.setItem(this.FILE_SYNC_KEY, timestamp);
+      },
+
+      async fetchFile() {
         try {
-          const resp = await fetch('./portfolio.json');
-          if (resp.ok) {
-            const data = await resp.json();
-            this.save(data);
-            return data;
-          }
+          const resp = await fetch('./portfolio.json', { cache: 'no-cache' });
+          if (resp.ok) return await resp.json();
         } catch (e) { /* ignore */ }
+        return null;
+      },
+
+      async initFromFile() {
+        const fileData = await this.fetchFile();
+        if (fileData) {
+          this.save(fileData);
+          this.setLastFileSync(fileData.meta?.lastUpdated || '');
+          return fileData;
+        }
         return this.getEmpty();
+      },
+
+      // localStorage가 비어있으면 portfolio.json을 그대로 적재.
+      // 이미 있으면 portfolio.json의 lastUpdated가 마지막 동기화보다 새로울 때만
+      // 누락된 stocks/transactions(ID 기준)를 추가로 merge.
+      mergeFromFile(localData, fileData) {
+        if (!fileData) return { data: localData, changed: false };
+        const fileTs = fileData.meta?.lastUpdated || '';
+        const lastSync = this.getLastFileSync();
+        if (!fileTs || fileTs <= lastSync) return { data: localData, changed: false };
+
+        let changed = false;
+        for (const code of Object.keys(fileData.stocks || {})) {
+          if (!localData.stocks[code]) {
+            localData.stocks[code] = fileData.stocks[code];
+            changed = true;
+          }
+        }
+        const existingIds = new Set(localData.transactions.map(t => t.id));
+        for (const tx of (fileData.transactions || [])) {
+          if (tx && tx.id && !existingIds.has(tx.id)) {
+            localData.transactions.push(tx);
+            changed = true;
+          }
+        }
+        this.setLastFileSync(fileTs);
+        return { data: localData, changed };
       },
 
       async init() {
         let data = this.load();
-        if (!data || data.transactions.length === 0) {
-          const fileData = await this.initFromFile();
-          if (fileData.transactions.length > 0) {
-            data = fileData;
-            this.save(data);
-          } else if (!data) {
-            data = fileData;
-            this.save(data);
-          }
+        const fileData = await this.fetchFile();
+
+        if (!data) {
+          data = fileData || this.getEmpty();
+          this.save(data);
+          this.setLastFileSync(fileData?.meta?.lastUpdated || '');
+          return data;
         }
-        return data;
+
+        const merged = this.mergeFromFile(data, fileData);
+        if (merged.changed) this.save(merged.data);
+        return merged.data;
       },
 
       addTransaction(data, tx) {
@@ -929,7 +972,8 @@
       '307950': '현대오토에버', '247540': '에코프로비엠', '086520': '에코프로',
       '042700': '한미반도체',
       '009290': '광동제약',
-      '005610': 'SPC삼립'
+      '005610': 'SPC삼립',
+      '026960': '동서'
     };
 
     // ===================== Portfolio =====================

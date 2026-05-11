@@ -1,12 +1,13 @@
 {
   "meta": {
     "version": 1,
-    "lastUpdated": "2026-03-14T09:00:00+09:00",
+    "lastUpdated": "2026-05-11T09:00:00+09:00",
     "baseCurrency": "KRW"
   },
   "stocks": {
     "009290": { "name": "광동제약", "market": "KOSPI" },
-    "005610": { "name": "SPC삼립", "market": "KOSPI" }
+    "005610": { "name": "SPC삼립", "market": "KOSPI" },
+    "026960": { "name": "동서", "market": "KOSPI" }
   },
   "transactions": [
     {
@@ -27,6 +28,16 @@
       "quantity": 200,
       "price": 49850,
       "fee": 1496,
+      "memo": ""
+    },
+    {
+      "id": "tx_1746921600000",
+      "code": "026960",
+      "type": "buy",
+      "date": "2026-05-11",
+      "quantity": 500,
+      "price": 24850,
+      "fee": 1864,
       "memo": ""
     }
   ]
