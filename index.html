@@ -128,9 +128,13 @@
       font-weight: 500; letter-spacing: 0.3px; text-transform: uppercase;
     }
     .summary-total {
-      font-size: 30px; font-weight: 700; margin-bottom: 20px;
+      font-size: 30px; font-weight: 700; margin-bottom: 6px;
       letter-spacing: -1px; color: var(--text-primary);
     }
+    .summary-sub {
+      font-size: 12px; color: var(--text-secondary); font-weight: 500; margin-bottom: 18px;
+    }
+    .summary-sub b { color: var(--text-primary); font-weight: 600; }
     .summary-row {
       display: flex; gap: 8px;
     }
@@ -151,6 +155,7 @@
       font-size: 12px; font-weight: 600; margin-bottom: 10px;
       color: var(--text-tertiary); letter-spacing: 0.5px; text-transform: uppercase;
     }
+    .section-title.spaced { margin-top: 22px; }
     .holding-card {
       background: var(--bg-card);
       border-radius: var(--radius);
@@ -489,6 +494,33 @@
     }
     .manual-price-input:focus { border-color: var(--text-primary); }
 
+    /* 예수금 패널 (트레이드 탭) */
+    .cash-panel {
+      background: var(--bg-card); border-radius: var(--radius);
+      padding: 16px 18px; margin-bottom: 8px;
+      box-shadow: var(--shadow-sm); border: 1px solid var(--border-light);
+    }
+    .cash-balance-row {
+      display: flex; align-items: center; justify-content: space-between;
+      padding-bottom: 14px; margin-bottom: 14px; border-bottom: 1px solid var(--border-light);
+    }
+    .cash-balance-label { font-size: 13px; color: var(--text-secondary); font-weight: 600; }
+    .cash-balance-value { font-size: 18px; font-weight: 700; }
+    .cash-io { display: flex; gap: 8px; }
+    .cash-io-input { flex: 1; }
+    .cash-io-btn {
+      padding: 0 18px; border: none; border-radius: var(--radius-sm);
+      font-size: 14px; font-weight: 700; cursor: pointer; font-family: inherit;
+    }
+    .cash-io-btn.deposit { background: var(--color-gain); color: #fff; }
+    .cash-io-btn.withdraw { background: var(--color-loss); color: #fff; }
+    .cash-io-btn:active { opacity: 0.85; }
+    .tx-type-badge.deposit { background: #fef2f2; color: var(--color-gain); border: 1px solid #fecaca; }
+    .tx-type-badge.withdraw { background: #eff6ff; color: var(--color-loss); border: 1px solid #bfdbfe; }
+
+    /* 예수금 / 실현손익: 종목 카드 상단 한 줄만 사용 */
+    .row-card .holding-top { margin-bottom: 0; align-items: center; }
+
     /* Divider line in settings */
     .settings-divider { padding: 0 18px; }
     .settings-divider hr { border: none; border-top: 1px solid var(--border-light); }
@@ -519,13 +551,14 @@
       <div class="summary-card">
         <div class="summary-label">Total Value</div>
         <div class="summary-total" id="totalValue">&#8361;0</div>
+        <div class="summary-sub" id="totalSub"></div>
         <div class="summary-row">
           <div class="summary-item">
             <div class="summary-item-label">투자금액</div>
             <div class="summary-item-value" id="totalInvested">&#8361;0</div>
           </div>
           <div class="summary-item">
-            <div class="summary-item-label">수익금</div>
+            <div class="summary-item-label">평가손익</div>
             <div class="summary-item-value" id="totalPnl">&#8361;0</div>
           </div>
           <div class="summary-item">
@@ -540,9 +573,24 @@
 
     <!-- Transactions Tab -->
     <div class="tab-pane" id="tabTx">
-      <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:14px;">
-        <div class="section-title" style="margin-bottom:0">Transactions</div>
+      <div class="section-title">예수금</div>
+      <div class="cash-panel">
+        <div class="cash-balance-row">
+          <span class="cash-balance-label">현재 예수금</span>
+          <span class="cash-balance-value" id="cashBalance">&#8361;0</span>
+        </div>
+        <div class="cash-io">
+          <input type="number" class="form-input cash-io-input" id="cashIoInput" inputmode="numeric" placeholder="입출금액 (원)">
+          <button type="button" class="cash-io-btn deposit" id="btnDeposit">입금</button>
+          <button type="button" class="cash-io-btn withdraw" id="btnWithdraw">출금</button>
+        </div>
+        <div class="form-hint" style="margin-top:8px;">매수/매도는 예수금에 자동 반영됩니다. 은행 입출금만 여기서 기록하세요.</div>
       </div>
+
+      <div class="section-title spaced" id="realizedTitle" style="display:none;">실현손익</div>
+      <div id="realizedList"></div>
+
+      <div class="section-title spaced">Transactions</div>
       <div id="txList"></div>
     </div>
 
@@ -702,10 +750,29 @@
 
       getEmpty() {
         return {
-          meta: { version: 1, lastUpdated: new Date().toISOString(), baseCurrency: 'KRW' },
+          meta: { version: 1, lastUpdated: new Date().toISOString(), baseCurrency: 'KRW', openingCash: 0 },
           stocks: {},
           transactions: []
         };
+      },
+
+      // 예수금은 '기초예수금 + 입금 - 출금 + 매도 - 매수'로 파생 계산한다.
+      // 구버전(meta.cash 잔액 저장)을 열면, 파생값이 기존 잔액과 같아지도록 openingCash를 역산.
+      normalize(data) {
+        if (!data.meta) data.meta = {};
+        if (data.meta.openingCash == null) {
+          const base = (typeof data.meta.cash === 'number') ? data.meta.cash : 0;
+          let flow = 0;
+          for (const tx of (data.transactions || [])) {
+            if (tx.type === 'buy') flow -= (tx.quantity * tx.price + (tx.fee || 0));
+            else if (tx.type === 'sell') flow += (tx.quantity * tx.price - (tx.fee || 0));
+            else if (tx.type === 'deposit') flow += (tx.amount || 0);
+            else if (tx.type === 'withdraw') flow -= (tx.amount || 0);
+          }
+          data.meta.openingCash = base - flow;
+        }
+        delete data.meta.cash;
+        return data;
       },
 
       load() {
@@ -779,14 +846,15 @@
         const fileData = await this.fetchFile();
 
         if (!data) {
-          data = fileData || this.getEmpty();
+          data = this.normalize(fileData || this.getEmpty());
           this.save(data);
           this.setLastFileSync(fileData?.meta?.lastUpdated || '');
           return data;
         }
 
         const merged = this.mergeFromFile(data, fileData);
-        if (merged.changed) this.save(merged.data);
+        this.normalize(merged.data);
+        this.save(merged.data);
         return merged.data;
       },
 
@@ -875,27 +943,57 @@
     // ===================== PriceService =====================
     const PriceService = {
       CACHE_TTL: 5 * 60 * 1000,
+      TIMEOUT: 6000,
+      CONCURRENCY: 4,
+      DEFAULT_PROXY: 'https://api.allorigins.win/raw?url=',
 
-      PROXY_LIST: [
-        'https://api.allorigins.win/raw?url=',
-        'https://corsproxy.io/?url=',
-        'https://api.codetabs.com/v1/proxy?quest='
+      // 프록시 빌더(포맷이 제각각이라 함수로) — 여러 개를 동시에 쏴서 먼저 성공하는 것 사용
+      PROXIES: [
+        u => 'https://cors.eu.org/' + u,
+        u => 'https://api.allorigins.win/raw?url=' + encodeURIComponent(u),
+        u => 'https://api.codetabs.com/v1/proxy?quest=' + encodeURIComponent(u),
+        u => 'https://corsproxy.io/?url=' + encodeURIComponent(u),
+        u => 'https://thingproxy.freeboard.io/fetch/' + u
       ],
 
-      async proxyFetch(url) {
-        // 사용자 설정 프록시 먼저 시도
-        const custom = DataStore.getProxyUrl();
-        const proxies = [custom, ...this.PROXY_LIST.filter(p => p !== custom)];
+      // AbortSignal.timeout 폴리필 (구형 iOS Safari<16 대응)
+      _timeoutSignal(ms) {
+        if (typeof AbortSignal !== 'undefined' && AbortSignal.timeout) return AbortSignal.timeout(ms);
+        const ac = new AbortController();
+        setTimeout(() => ac.abort(), ms);
+        return ac.signal;
+      },
 
-        for (const proxy of proxies) {
-          try {
-            const resp = await fetch(proxy + encodeURIComponent(url), { signal: AbortSignal.timeout(8000) });
-            if (resp.ok) {
-              return await resp.text();
-            }
-          } catch (e) { /* try next proxy */ }
-        }
-        return null;
+      // 여러 프로미스 중 가장 먼저 이행되는 것 반환(Promise.any 미지원 브라우저 대비 수동 구현)
+      _firstSuccess(promises) {
+        return new Promise((resolve, reject) => {
+          let pending = promises.length;
+          if (!pending) { reject(new Error('no proxy')); return; }
+          let done = false;
+          promises.forEach(p => p.then(
+            v => { if (!done) { done = true; resolve(v); } },
+            () => { pending--; if (pending === 0 && !done) reject(new Error('all failed')); }
+          ));
+        });
+      },
+
+      // 프록시들을 병렬로 경쟁시켜 첫 성공 응답 텍스트 반환
+      async proxyFetch(url) {
+        const custom = DataStore.getProxyUrl();
+        const builders = [];
+        if (custom && custom !== this.DEFAULT_PROXY) builders.push(u => custom + encodeURIComponent(u));
+        for (const b of this.PROXIES) builders.push(b);
+
+        const attempts = builders.map(build => (async () => {
+          const resp = await fetch(build(url), { signal: this._timeoutSignal(this.TIMEOUT) });
+          if (!resp.ok) throw new Error('status ' + resp.status);
+          const text = await resp.text();
+          if (!text) throw new Error('empty');
+          return text;
+        })());
+
+        try { return await this._firstSuccess(attempts); }
+        catch (e) { return null; }
       },
 
       async fetchPrice(stockCode) {
@@ -905,23 +1003,35 @@
           return { price: cached.price, stale: false, timestamp: cached.timestamp };
         }
 
-        // 1차: Naver Finance 차트 API
+        // 1차: 네이버 모바일 JSON API (시세+종목명 한 번에, 정규식 없이 견고)
+        try {
+          const text = await this.proxyFetch(`https://m.stock.naver.com/api/stock/${stockCode}/basic`);
+          if (text) {
+            const json = JSON.parse(text);
+            const price = parseInt(String(json.closePrice || '').replace(/[^0-9]/g, ''));
+            if (!isNaN(price) && price > 0) {
+              DataStore.setPriceCache(stockCode, price);
+              return { price, stale: false, timestamp: Date.now(), name: json.stockName };
+            }
+          }
+        } catch (e) { /* fallback */ }
+
+        // 2차: 네이버 차트 API (XML)
         try {
           const text = await this.proxyFetch(`https://fchart.stock.naver.com/sise.nhn?symbol=${stockCode}&timeframe=day&count=1&requestType=0`);
           if (text) {
             const match = text.match(/<item data="([^"]+)"/);
             if (match) {
-              const parts = match[1].split('|');
-              const closePrice = parseInt(parts[4]);
+              const closePrice = parseInt(match[1].split('|')[4]);
               if (!isNaN(closePrice) && closePrice > 0) {
                 DataStore.setPriceCache(stockCode, closePrice);
                 return { price: closePrice, stale: false, timestamp: Date.now() };
               }
             }
           }
-        } catch (e) { /* try fallback */ }
+        } catch (e) { /* fallback */ }
 
-        // 2차: Naver Finance 메인 페이지 스크래핑
+        // 3차: 네이버 금융 페이지 스크래핑
         try {
           const html = await this.proxyFetch(`https://finance.naver.com/item/main.naver?code=${stockCode}`);
           if (html) {
@@ -942,12 +1052,18 @@
         return { price: null, stale: false, timestamp: null };
       },
 
+      // 종목 병렬 조회 (동시성 제한, 종목 간 300ms 딜레이 제거)
       async fetchAllPrices(codes) {
         const results = {};
-        for (const code of codes) {
-          results[code] = await this.fetchPrice(code);
-          await new Promise(r => setTimeout(r, 300));
-        }
+        let idx = 0;
+        const worker = async () => {
+          while (idx < codes.length) {
+            const code = codes[idx++];
+            results[code] = await this.fetchPrice(code);
+          }
+        };
+        const n = Math.min(this.CONCURRENCY, codes.length);
+        await Promise.all(Array.from({ length: n }, () => worker()));
         return results;
       }
     };
@@ -978,60 +1094,83 @@
 
     // ===================== Portfolio =====================
     const Portfolio = {
-      computeHoldings(data) {
-        const holdings = {};
-        const sorted = [...data.transactions].sort((a, b) => a.date.localeCompare(b.date));
+      // 이동평균법으로 종목별 보유/실현손익 누적. 정렬은 날짜 + id(동일 날짜 안정성) 기준.
+      _walk(data) {
+        const acc = {};
+        const sorted = [...data.transactions].sort((a, b) => a.date.localeCompare(b.date) || a.id.localeCompare(b.id));
 
         for (const tx of sorted) {
-          if (!holdings[tx.code]) {
-            holdings[tx.code] = {
+          if (tx.type !== 'buy' && tx.type !== 'sell') continue;
+          if (!acc[tx.code]) {
+            acc[tx.code] = {
               code: tx.code,
               name: data.stocks[tx.code]?.name || KNOWN_STOCKS[tx.code] || tx.code,
               market: data.stocks[tx.code]?.market || 'KOSPI',
-              qty: 0,
-              totalCost: 0,
-              realizedPnl: 0
+              qty: 0, totalCost: 0, realizedPnl: 0, hasSell: false
             };
           }
-          const h = holdings[tx.code];
+          const h = acc[tx.code];
 
           if (tx.type === 'buy') {
             h.totalCost += tx.quantity * tx.price;
             h.qty += tx.quantity;
-          } else if (tx.type === 'sell') {
-            if (h.qty > 0) {
-              const avgCost = h.totalCost / h.qty;
-              const sellRevenue = (tx.quantity * tx.price) - (tx.fee || 0);
-              const costBasis = tx.quantity * avgCost;
-              h.realizedPnl += sellRevenue - costBasis;
-              h.totalCost -= tx.quantity * avgCost;
-              h.qty -= tx.quantity;
-            }
+          } else if (tx.type === 'sell' && h.qty > 0) {
+            const avgCost = h.totalCost / h.qty;
+            const sellRevenue = (tx.quantity * tx.price) - (tx.fee || 0);
+            h.realizedPnl += sellRevenue - tx.quantity * avgCost;
+            h.totalCost -= tx.quantity * avgCost;
+            h.qty -= tx.quantity;
+            h.hasSell = true;
           }
         }
-
-        return Object.values(holdings)
-          .filter(h => h.qty > 0)
-          .map(h => ({
-            ...h,
-            avgPrice: h.qty > 0 ? Math.round(h.totalCost / h.qty) : 0
-          }));
+        return acc;
       },
 
-      computeSummary(holdings, prices) {
+      computeHoldings(data) {
+        return Object.values(this._walk(data))
+          .filter(h => h.qty > 0)
+          .map(h => ({ ...h, avgPrice: h.qty > 0 ? Math.round(h.totalCost / h.qty) : 0 }));
+      },
+
+      // 매도로 확정된 손익. filter 이전에 집계하므로 전량매도 종목도 사라지지 않음.
+      computeRealized(data) {
+        const positions = Object.values(this._walk(data))
+          .filter(h => h.hasSell)
+          .map(h => ({ code: h.code, name: h.name, realizedPnl: h.realizedPnl, soldOut: h.qty === 0 }));
+        return { total: positions.reduce((s, p) => s + p.realizedPnl, 0), positions };
+      },
+
+      // 예수금 = 기초예수금 + 입금 - 출금 + 매도(순수령) - 매수(총지출). 항상 파생 계산.
+      computeCash(data) {
+        let cash = data.meta.openingCash || 0;
+        for (const tx of data.transactions) {
+          if (tx.type === 'buy') cash -= (tx.quantity * tx.price + (tx.fee || 0));
+          else if (tx.type === 'sell') cash += (tx.quantity * tx.price - (tx.fee || 0));
+          else if (tx.type === 'deposit') cash += (tx.amount || 0);
+          else if (tx.type === 'withdraw') cash -= (tx.amount || 0);
+        }
+        return cash;
+      },
+
+      computeSummary(holdings, prices, cash) {
         let totalInvested = 0;
-        let totalValue = 0;
+        let stockValue = 0;
 
         for (const h of holdings) {
           totalInvested += h.totalCost;
           const currentPrice = prices[h.code]?.price || h.avgPrice;
-          totalValue += h.qty * currentPrice;
+          stockValue += h.qty * currentPrice;
         }
 
-        const totalPnl = totalValue - totalInvested;
-        const totalReturn = totalInvested > 0 ? (totalPnl / totalInvested) * 100 : 0;
+        const c = cash || 0;
+        const unrealizedPnl = stockValue - totalInvested;
+        const totalReturn = totalInvested > 0 ? (unrealizedPnl / totalInvested) * 100 : 0;
 
-        return { totalInvested, totalValue, totalPnl, totalReturn };
+        return {
+          totalInvested, stockValue, cash: c,
+          totalValue: stockValue + c,
+          unrealizedPnl, totalReturn
+        };
       }
     };
 
@@ -1076,12 +1215,13 @@
 
       renderMain(holdings, prices, summary) {
         document.getElementById('totalValue').textContent = this.formatKRWNoSign(summary.totalValue);
-        document.getElementById('totalValue').className = 'summary-total';
+        document.getElementById('totalSub').innerHTML =
+          '주식 <b>' + this.formatKRWNoSign(summary.stockValue) + '</b> &nbsp;&#183;&nbsp; 예수금 <b>' + this.formatKRWNoSign(summary.cash) + '</b>';
 
         document.getElementById('totalInvested').textContent = this.formatKRWNoSign(summary.totalInvested);
 
-        document.getElementById('totalPnl').textContent = this.formatKRW(summary.totalPnl);
-        document.getElementById('totalPnl').className = 'summary-item-value ' + this.pnlClass(summary.totalPnl);
+        document.getElementById('totalPnl').textContent = this.formatKRW(summary.unrealizedPnl);
+        document.getElementById('totalPnl').className = 'summary-item-value ' + this.pnlClass(summary.unrealizedPnl);
 
         document.getElementById('totalReturn').textContent = this.formatPercent(summary.totalReturn);
         document.getElementById('totalReturn').className = 'summary-item-value ' + this.pnlClass(summary.totalReturn);
@@ -1146,6 +1286,26 @@
         });
       },
 
+      renderRealized(realized) {
+        const title = document.getElementById('realizedTitle');
+        const container = document.getElementById('realizedList');
+        if (!realized.positions.length) { title.style.display = 'none'; container.innerHTML = ''; return; }
+        title.style.display = 'block';
+        container.innerHTML = realized.positions.map(p => `
+          <div class="holding-card row-card">
+            <div class="holding-top">
+              <div>
+                <div class="holding-name">${p.name}</div>
+                <div class="holding-code">${p.code} | ${p.soldOut ? '전량 매도' : '일부 매도'}</div>
+              </div>
+              <div>
+                <div class="holding-pnl-amount ${this.pnlClass(p.realizedPnl)}">${this.formatKRW(p.realizedPnl)}</div>
+                <div class="holding-price-label">실현손익</div>
+              </div>
+            </div>
+          </div>`).join('');
+      },
+
       renderTransactions(data) {
         const container = document.getElementById('txList');
         const sorted = [...data.transactions].sort((a, b) => b.date.localeCompare(a.date) || b.id.localeCompare(a.id));
@@ -1160,6 +1320,27 @@
         }
 
         container.innerHTML = sorted.map(tx => {
+          // 입금 / 출금 (예수금 관리)
+          if (tx.type === 'deposit' || tx.type === 'withdraw') {
+            const isDep = tx.type === 'deposit';
+            return `
+              <div class="tx-card" data-id="${tx.id}">
+                <div class="tx-type-badge ${tx.type}">${isDep ? '입금' : '출금'}</div>
+                <div class="tx-info">
+                  <div class="tx-stock-name">예수금 ${isDep ? '입금' : '출금'}</div>
+                  <div class="tx-detail">${tx.memo || '현금'}</div>
+                  <div class="tx-actions">
+                    <button class="tx-action-btn delete" onclick="App.confirmDeleteTx('${tx.id}')">삭제</button>
+                  </div>
+                </div>
+                <div class="tx-right">
+                  <div class="tx-amount">${isDep ? '+' : '-'}${this.formatKRWNoSign(tx.amount)}</div>
+                  <div class="tx-date">${this.formatDate(tx.date)}</div>
+                </div>
+              </div>`;
+          }
+
+          // 매수 / 매도
           const stockName = data.stocks[tx.code]?.name || KNOWN_STOCKS[tx.code] || tx.code;
           const total = tx.quantity * tx.price;
           const typeLabel = tx.type === 'buy' ? '매수' : '매도';
@@ -1189,7 +1370,7 @@
         const updated = data.meta.lastUpdated ? new Date(data.meta.lastUpdated).toLocaleString('ko-KR') : '-';
 
         document.getElementById('settingsInfo').innerHTML =
-          `종목 ${stockCount}개 | 거래 ${txCount}건<br>마지막 수정: ${updated}<br><br>v1.0.0`;
+          `종목 ${stockCount}개 | 거래 ${txCount}건<br>예수금 ${this.formatKRWNoSign(Portfolio.computeCash(data))}<br>마지막 수정: ${updated}<br><br>v1.0.0`;
 
         document.getElementById('proxyUrlInput').value = DataStore.getProxyUrl();
       },
@@ -1209,12 +1390,14 @@
       currentTab: 'tabMain',
       refreshTimer: null,
       pendingDeleteTxId: null,
+      _fetching: false,
 
       async init() {
         this.data = await DataStore.init();
         this.setupNav();
         this.setupModal();
         this.setupSettings();
+        this.setupCashIO();
         this.setupConfirm();
         this.refresh();
         this.fetchPrices();
@@ -1233,10 +1416,16 @@
             };
           }
         }
-        const summary = Portfolio.computeSummary(holdings, this.prices);
+        const realized = Portfolio.computeRealized(this.data);
+        const cash = Portfolio.computeCash(this.data);
+        const summary = Portfolio.computeSummary(holdings, this.prices, cash);
         UI.renderMain(holdings, this.prices, summary);
+        UI.renderRealized(realized);
         UI.renderTransactions(this.data);
         UI.renderSettings(this.data);
+
+        const cashBalance = document.getElementById('cashBalance');
+        if (cashBalance) cashBalance.textContent = UI.formatKRWNoSign(cash);
 
         const timestamps = Object.values(this.prices).map(p => p.timestamp).filter(Boolean);
         if (timestamps.length > 0) {
@@ -1246,16 +1435,21 @@
       },
 
       async fetchPrices() {
+        if (this._fetching) return;
         const holdings = Portfolio.computeHoldings(this.data);
         const codes = holdings.map(h => h.code);
         if (codes.length === 0) return;
 
+        this._fetching = true;
         document.getElementById('btnRefreshPrice').innerHTML = '<span class="price-loading"></span>';
 
-        this.prices = await PriceService.fetchAllPrices(codes);
-        this.refresh();
-
-        document.getElementById('btnRefreshPrice').innerHTML = '<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M21.5 2v6h-6M2.5 22v-6h6"/><path d="M2.5 11.5a10 10 0 0 1 18.4-4.5M21.5 12.5a10 10 0 0 1-18.4 4.5"/></svg>';
+        try {
+          this.prices = await PriceService.fetchAllPrices(codes);
+          this.refresh();
+        } finally {
+          this._fetching = false;
+          document.getElementById('btnRefreshPrice').innerHTML = '<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M21.5 2v6h-6M2.5 22v-6h6"/><path d="M2.5 11.5a10 10 0 0 1 18.4-4.5M21.5 12.5a10 10 0 0 1-18.4 4.5"/></svg>';
+        }
       },
 
       startAutoRefresh() {
@@ -1480,6 +1674,29 @@
             this.pendingAction = null;
           }
         });
+      },
+
+      setupCashIO() {
+        const input = document.getElementById('cashIoInput');
+        if (!input) return;
+        const record = (type) => {
+          const amt = parseInt(input.value);
+          if (!amt || amt <= 0) { UI.showToast('입출금액을 입력해주세요.'); return; }
+          if (type === 'withdraw' && amt > Portfolio.computeCash(this.data)) {
+            UI.showToast('예수금 잔액을 초과할 수 없습니다.'); return;
+          }
+          this.data.transactions.push({
+            id: 'tx_' + Date.now(),
+            type, date: new Date().toISOString().slice(0, 10),
+            amount: amt, memo: ''
+          });
+          DataStore.save(this.data);
+          input.value = '';
+          this.refresh();
+          UI.showToast(type === 'deposit' ? '입금이 기록되었습니다.' : '출금이 기록되었습니다.');
+        };
+        document.getElementById('btnDeposit').addEventListener('click', () => record('deposit'));
+        document.getElementById('btnWithdraw').addEventListener('click', () => record('withdraw'));
       },
 
       setupSettings() {
