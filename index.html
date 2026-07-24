@@ -505,7 +505,12 @@
       padding-bottom: 14px; margin-bottom: 14px; border-bottom: 1px solid var(--border-light);
     }
     .cash-balance-label { font-size: 13px; color: var(--text-secondary); font-weight: 600; }
-    .cash-balance-value { font-size: 18px; font-weight: 700; }
+    .cash-balance-value { font-size: 18px; font-weight: 700; cursor: pointer; }
+    .cash-balance-input {
+      width: 150px; padding: 5px 9px; background: var(--bg-input);
+      border: 1.5px solid var(--text-primary); border-radius: 8px;
+      font-size: 16px; text-align: right; font-weight: 700; font-family: inherit; outline: none;
+    }
     .cash-io { display: flex; gap: 8px; }
     .cash-io-input { flex: 1; }
     .cash-io-btn {
@@ -584,7 +589,7 @@
           <button type="button" class="cash-io-btn deposit" id="btnDeposit">입금</button>
           <button type="button" class="cash-io-btn withdraw" id="btnWithdraw">출금</button>
         </div>
-        <div class="form-hint" style="margin-top:8px;">매수/매도는 예수금에 자동 반영됩니다. 은행 입출금만 여기서 기록하세요.</div>
+        <div class="form-hint" style="margin-top:8px;">매수/매도는 예수금에 자동 반영됩니다. 은행 입출금만 여기서 기록하세요. 잔액이 실제와 다르면 <b>금액을 탭</b>해서 바로 맞출 수 있어요.</div>
       </div>
 
       <div class="section-title spaced" id="realizedTitle" style="display:none;">실현손익</div>
@@ -1425,7 +1430,7 @@
         UI.renderSettings(this.data);
 
         const cashBalance = document.getElementById('cashBalance');
-        if (cashBalance) cashBalance.textContent = UI.formatKRWNoSign(cash);
+        if (cashBalance && !cashBalance.querySelector('input')) cashBalance.textContent = UI.formatKRWNoSign(cash);
 
         const timestamps = Object.values(this.prices).map(p => p.timestamp).filter(Boolean);
         if (timestamps.length > 0) {
@@ -1697,6 +1702,29 @@
         };
         document.getElementById('btnDeposit').addEventListener('click', () => record('deposit'));
         document.getElementById('btnWithdraw').addEventListener('click', () => record('withdraw'));
+
+        // 잔액을 탭하면 실제 예수금으로 직접 맞추기(기초예수금 재보정). 음수/불일치 복구용.
+        const balance = document.getElementById('cashBalance');
+        if (balance) {
+          balance.addEventListener('click', () => {
+            if (balance.querySelector('input')) return;
+            const cur = Portfolio.computeCash(this.data);
+            balance.innerHTML = `<input type="number" class="cash-balance-input" value="${cur}" inputmode="numeric">`;
+            const inp = balance.querySelector('input');
+            inp.focus(); inp.select();
+            const commit = () => {
+              const v = parseInt(inp.value);
+              if (!isNaN(v)) {
+                this.data.meta.openingCash = (this.data.meta.openingCash || 0) + (v - Portfolio.computeCash(this.data));
+                DataStore.save(this.data);
+                UI.showToast('예수금을 맞췄습니다.');
+              }
+              this.refresh();
+            };
+            inp.addEventListener('blur', commit);
+            inp.addEventListener('keydown', (e) => { if (e.key === 'Enter') inp.blur(); });
+          });
+        }
       },
 
       setupSettings() {
